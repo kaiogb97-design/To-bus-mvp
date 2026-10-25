@@ -36,11 +36,11 @@ jobs:
 
       - name: Verificar arquivos do aplicativo
         run: |
-          echo "Arquivos que serão incluídos no APK:"
+          echo "Arquivos dentro do APK:"
           ls -la app/src/main/assets
 
       - name: Gerar APK
-        run: gradle :app:assembleDebug --stacktrace
+        run: gradle assembleDebug --stacktrace
 
       - name: Salvar APK
         uses: actions/upload-artifact@v4
