@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors><certificates src="system" /></trust-anchors>
+    </base-config>
+    <!-- Pinning: gere o pin da CHAVE PÚBLICA do certificado do seu domínio e inclua um pin de BACKUP.
+         openssl s_client -connect api.SEU-DOMINIO.com.br:443 | openssl x509 -pubkey -noout |
+         openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | base64
+         Atenção: pin errado = app sem rede. Defina expiração e planeje a rotação. -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="false">api.SEU-DOMINIO.com.br</domain>
+        <pin-set expiration="2027-12-31">
+            <pin digest="SHA-256">TROQUE_PELO_PIN_ATUAL=</pin>
+            <pin digest="SHA-256">TROQUE_PELO_PIN_DE_BACKUP=</pin>
+        </pin-set>
+    </domain-config>
+</network-security-config>

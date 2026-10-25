@@ -1,0 +1,17 @@
+// app/build.gradle (trechos)
+android {
+    defaultConfig { minSdk 23; targetSdk 35 }
+    buildTypes {
+        release {
+            debuggable false
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release   // chave de RELEASE (guarde fora do repositório)
+        }
+    }
+}
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+    implementation 'androidx.biometric:biometric:1.1.0'
+}

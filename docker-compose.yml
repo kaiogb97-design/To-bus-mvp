@@ -1,0 +1,19 @@
+# Caddy faz TLS automático (Let's Encrypt) e é a única porta exposta. A API só fala na rede interna.
+services:
+  api:
+    build: .
+    env_file: .env
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes: ["tobus-data:/data"]
+    restart: unless-stopped
+    expose: ["8080"]
+  caddy:
+    image: caddy:2
+    ports: ["80:80", "443:443"]
+    volumes: ["./Caddyfile:/etc/caddy/Caddyfile:ro", "caddy-data:/data"]
+    depends_on: [api]
+    restart: unless-stopped
+volumes: { tobus-data: {}, caddy-data: {} }

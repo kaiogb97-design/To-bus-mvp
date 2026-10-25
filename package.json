@@ -1,0 +1,19 @@
+{
+  "name": "tobus-server",
+  "version": "1.0.0",
+  "description": "Servidor seguro do To Bus (API, razão financeiro imutável, Pix, validadores, backoffice)",
+  "type": "module",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --no-warnings src/index.js",
+    "test": "NODE_ENV=test node --no-warnings --test --test-concurrency=1 test/*.test.js",
+    "create-admin": "node --no-warnings scripts/create-admin.js",
+    "create-validator": "node --no-warnings scripts/create-validator.js",
+    "verify-ledger": "node --no-warnings scripts/verify-ledger.js",
+    "gen-keys": "node scripts/gen-keys.js",
+    "backup": "sh scripts/backup.sh"
+  },
+  "dependencies": {}
+}
