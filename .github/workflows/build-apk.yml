@@ -22,36 +22,147 @@ jobs:
 
       - name: Montar estrutura Android
         run: |
+          mkdir -p app/src/main/java/com/tobus/app
           mkdir -p app/src/main/assets
-          mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/values
-          mkdir -p app/src/main/res/mipmap-mdpi
-          mkdir -p app/src/main/res/mipmap-hdpi
-          mkdir -p app/src/main/res/mipmap-xhdpi
-          mkdir -p app/src/main/res/mipmap-xxhdpi
-          mkdir -p app/src/main/res/mipmap-xxxhdpi
 
-          # Arquivos do aplicativo
+          # =========================
+          # ARQUIVOS WEB DO TO BUS
+          # =========================
+
           cp index.html app/src/main/assets/
           cp styles.css app/src/main/assets/
           cp app.js app/src/main/assets/
           cp config.js app/src/main/assets/
 
-          # Logo
           if [ -f logo.png ]; then
             cp logo.png app/src/main/assets/
           fi
 
-          # Manifest
-          cp AndroidManifest.xml app/src/main/AndroidManifest.xml
+          # =========================
+          # RECURSOS ANDROID
+          # =========================
 
-          # Recursos Android
-          cp data_extraction_rules.xml app/src/main/res/xml/data_extraction_rules.xml
-          cp network_security_config.xml app/src/main/res/xml/network_security_config.xml
-          cp styles.xml app/src/main/res/values/styles.xml
+          cp data_extraction_rules.xml \
+          app/src/main/res/xml/data_extraction_rules.xml
 
-          # settings.gradle
+          cp network_security_config.xml \
+          app/src/main/res/xml/network_security_config.xml
+
+          cp styles.xml \
+          app/src/main/res/values/styles.xml
+
+          # =========================
+          # MAIN ACTIVITY
+          # =========================
+
+          cat > app/src/main/java/com/tobus/app/MainActivity.java <<'EOF'
+          package com.tobus.app;
+
+          import android.annotation.SuppressLint;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+
+          public class MainActivity extends Activity {
+
+              private WebView webView;
+
+              @SuppressLint("SetJavaScriptEnabled")
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+
+                  webView = new WebView(this);
+                  setContentView(webView);
+
+                  WebSettings settings = webView.getSettings();
+
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setDatabaseEnabled(true);
+                  settings.setAllowFileAccess(true);
+                  settings.setAllowContentAccess(true);
+                  settings.setLoadsImagesAutomatically(true);
+
+                  webView.setWebViewClient(new WebViewClient());
+                  webView.setWebChromeClient(new WebChromeClient());
+
+                  webView.loadUrl(
+                      "file:///android_asset/index.html"
+                  );
+              }
+
+              @Override
+              public void onBackPressed() {
+                  if (webView != null && webView.canGoBack()) {
+                      webView.goBack();
+                  } else {
+                      super.onBackPressed();
+                  }
+              }
+
+              @Override
+              protected void onDestroy() {
+                  if (webView != null) {
+                      webView.destroy();
+                  }
+
+                  super.onDestroy();
+              }
+          }
+          EOF
+
+          # =========================
+          # ANDROID MANIFEST
+          # =========================
+
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+
+          <manifest
+              xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <uses-permission
+                  android:name="android.permission.INTERNET" />
+
+              <application
+                  android:allowBackup="true"
+                  android:dataExtractionRules="@xml/data_extraction_rules"
+                  android:networkSecurityConfig="@xml/network_security_config"
+                  android:label="To Bus"
+                  android:theme="@style/AppTheme"
+                  android:usesCleartextTraffic="true">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+
+                      <intent-filter>
+
+                          <action
+                              android:name="android.intent.action.MAIN" />
+
+                          <category
+                              android:name="android.intent.category.LAUNCHER" />
+
+                      </intent-filter>
+
+                  </activity>
+
+              </application>
+
+          </manifest>
+          EOF
+
+          # =========================
+          # SETTINGS.GRADLE
+          # =========================
+
           cat > settings.gradle <<'EOF'
           pluginManagement {
               repositories {
@@ -62,7 +173,10 @@ jobs:
           }
 
           dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositoriesMode.set(
+                  RepositoriesMode.FAIL_ON_PROJECT_REPOS
+              )
+
               repositories {
                   google()
                   mavenCentral()
@@ -70,10 +184,14 @@ jobs:
           }
 
           rootProject.name = "ToBus"
+
           include(":app")
           EOF
 
-          # build.gradle principal
+          # =========================
+          # BUILD.GRADLE PRINCIPAL
+          # =========================
+
           cat > build.gradle <<'EOF'
           plugins {
               id 'com.android.application' version '8.7.3' apply false
@@ -82,42 +200,61 @@ jobs:
           allprojects {
               configurations.all {
                   resolutionStrategy {
+
                       force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+
                       force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+
                       force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
                   }
               }
           }
           EOF
 
-          # app/build.gradle
+          # =========================
+          # APP/BUILD.GRADLE
+          # =========================
+
           cat > app/build.gradle <<'EOF'
           plugins {
               id 'com.android.application'
           }
 
           android {
+
               namespace 'com.tobus.app'
+
               compileSdk 35
 
               defaultConfig {
+
                   applicationId "com.tobus.app"
+
                   minSdk 24
+
                   targetSdk 35
-                  versionCode 1
-                  versionName "1.0"
+
+                  versionCode 2
+
+                  versionName "1.1"
               }
           }
 
           dependencies {
+
               implementation 'androidx.appcompat:appcompat:1.7.1'
+
               implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
           }
 
           configurations.all {
+
               resolutionStrategy {
+
                   force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+
                   force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+
                   force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
               }
           }
@@ -134,6 +271,6 @@ jobs:
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: ToBus-MVP-APK
+          name: ToBus-MVP-APK-v1.1
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
