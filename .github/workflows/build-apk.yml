@@ -1,4 +1,4 @@
-name: Build To Bus APK
+name: Teste To Bus Android
 
 on:
   workflow_dispatch:
@@ -20,148 +20,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Montar estrutura Android
+      - name: Criar aplicativo Android de teste
         run: |
           mkdir -p app/src/main/java/com/tobus/app
-          mkdir -p app/src/main/assets
-          mkdir -p app/src/main/res/xml
-          mkdir -p app/src/main/res/values
-
-          # =========================
-          # ARQUIVOS WEB DO TO BUS
-          # =========================
-
-          cp index.html app/src/main/assets/
-          cp styles.css app/src/main/assets/
-          cp app.js app/src/main/assets/
-          cp config.js app/src/main/assets/
-
-          if [ -f logo.png ]; then
-            cp logo.png app/src/main/assets/
-          fi
-
-          # =========================
-          # RECURSOS ANDROID
-          # =========================
-
-          cp data_extraction_rules.xml \
-          app/src/main/res/xml/data_extraction_rules.xml
-
-          cp network_security_config.xml \
-          app/src/main/res/xml/network_security_config.xml
-
-          cp styles.xml \
-          app/src/main/res/values/styles.xml
-
-          # =========================
-          # MAIN ACTIVITY
-          # =========================
-
-          cat > app/src/main/java/com/tobus/app/MainActivity.java <<'EOF'
-          package com.tobus.app;
-
-          import android.annotation.SuppressLint;
-          import android.app.Activity;
-          import android.os.Bundle;
-          import android.webkit.WebChromeClient;
-          import android.webkit.WebSettings;
-          import android.webkit.WebView;
-          import android.webkit.WebViewClient;
-
-          public class MainActivity extends Activity {
-
-              private WebView webView;
-
-              @SuppressLint("SetJavaScriptEnabled")
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-
-                  webView = new WebView(this);
-                  setContentView(webView);
-
-                  WebSettings settings = webView.getSettings();
-
-                  settings.setJavaScriptEnabled(true);
-                  settings.setDomStorageEnabled(true);
-                  settings.setDatabaseEnabled(true);
-                  settings.setAllowFileAccess(true);
-                  settings.setAllowContentAccess(true);
-                  settings.setLoadsImagesAutomatically(true);
-
-                  webView.setWebViewClient(new WebViewClient());
-                  webView.setWebChromeClient(new WebChromeClient());
-
-                  webView.loadUrl(
-                      "file:///android_asset/index.html"
-                  );
-              }
-
-              @Override
-              public void onBackPressed() {
-                  if (webView != null && webView.canGoBack()) {
-                      webView.goBack();
-                  } else {
-                      super.onBackPressed();
-                  }
-              }
-
-              @Override
-              protected void onDestroy() {
-                  if (webView != null) {
-                      webView.destroy();
-                  }
-
-                  super.onDestroy();
-              }
-          }
-          EOF
-
-          # =========================
-          # ANDROID MANIFEST
-          # =========================
-
-          cat > app/src/main/AndroidManifest.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-
-          <manifest
-              xmlns:android="http://schemas.android.com/apk/res/android">
-
-              <uses-permission
-                  android:name="android.permission.INTERNET" />
-
-              <application
-                  android:allowBackup="true"
-                  android:dataExtractionRules="@xml/data_extraction_rules"
-                  android:networkSecurityConfig="@xml/network_security_config"
-                  android:label="To Bus"
-                  android:theme="@style/AppTheme"
-                  android:usesCleartextTraffic="true">
-
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true">
-
-                      <intent-filter>
-
-                          <action
-                              android:name="android.intent.action.MAIN" />
-
-                          <category
-                              android:name="android.intent.category.LAUNCHER" />
-
-                      </intent-filter>
-
-                  </activity>
-
-              </application>
-
-          </manifest>
-          EOF
-
-          # =========================
-          # SETTINGS.GRADLE
-          # =========================
 
           cat > settings.gradle <<'EOF'
           pluginManagement {
@@ -173,10 +34,7 @@ jobs:
           }
 
           dependencyResolutionManagement {
-              repositoriesMode.set(
-                  RepositoriesMode.FAIL_ON_PROJECT_REPOS
-              )
-
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories {
                   google()
                   mavenCentral()
@@ -184,36 +42,14 @@ jobs:
           }
 
           rootProject.name = "ToBus"
-
           include(":app")
           EOF
-
-          # =========================
-          # BUILD.GRADLE PRINCIPAL
-          # =========================
 
           cat > build.gradle <<'EOF'
           plugins {
               id 'com.android.application' version '8.7.3' apply false
           }
-
-          allprojects {
-              configurations.all {
-                  resolutionStrategy {
-
-                      force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
-
-                      force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
-
-                      force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
-                  }
-              }
-          }
           EOF
-
-          # =========================
-          # APP/BUILD.GRADLE
-          # =========================
 
           cat > app/build.gradle <<'EOF'
           plugins {
@@ -221,41 +57,89 @@ jobs:
           }
 
           android {
-
               namespace 'com.tobus.app'
-
               compileSdk 35
 
               defaultConfig {
-
                   applicationId "com.tobus.app"
-
                   minSdk 24
-
                   targetSdk 35
-
-                  versionCode 2
-
-                  versionName "1.1"
+                  versionCode 3
+                  versionName "1.2-test"
               }
           }
+          EOF
 
-          dependencies {
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
 
-              implementation 'androidx.appcompat:appcompat:1.7.1'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-              implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
-          }
+              <application
+                  android:label="To Bus Teste"
+                  android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
-          configurations.all {
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
 
-              resolutionStrategy {
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
 
-                  force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+                  </activity>
 
-                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+              </application>
 
-                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+          </manifest>
+          EOF
+
+          cat > app/src/main/java/com/tobus/app/MainActivity.java <<'EOF'
+          package com.tobus.app;
+
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.graphics.Color;
+          import android.view.Gravity;
+          import android.widget.LinearLayout;
+          import android.widget.TextView;
+
+          public class MainActivity extends Activity {
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+
+                  LinearLayout layout = new LinearLayout(this);
+
+                  layout.setOrientation(LinearLayout.VERTICAL);
+                  layout.setGravity(Gravity.CENTER);
+                  layout.setPadding(40, 40, 40, 40);
+                  layout.setBackgroundColor(Color.rgb(10, 10, 12));
+
+                  TextView titulo = new TextView(this);
+
+                  titulo.setText("To Bus");
+                  titulo.setTextSize(34);
+                  titulo.setTextColor(Color.WHITE);
+                  titulo.setGravity(Gravity.CENTER);
+
+                  TextView status = new TextView(this);
+
+                  status.setText(
+                      "\nAplicativo iniciado com sucesso!\n\n" +
+                      "O sistema Android do To Bus está funcionando."
+                  );
+
+                  status.setTextSize(18);
+                  status.setTextColor(Color.LTGRAY);
+                  status.setGravity(Gravity.CENTER);
+
+                  layout.addView(titulo);
+                  layout.addView(status);
+
+                  setContentView(layout);
               }
           }
           EOF
@@ -265,12 +149,12 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Gerar APK
+      - name: Gerar APK de teste
         run: gradle :app:assembleDebug --stacktrace
 
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: ToBus-MVP-APK-v1.1
+          name: ToBus-Teste-Android
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
