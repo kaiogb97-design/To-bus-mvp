@@ -24,6 +24,8 @@ jobs:
         run: |
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/xml
+          mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/mipmap-hdpi
           mkdir -p app/src/main/res/mipmap-mdpi
           mkdir -p app/src/main/res/mipmap-xhdpi
@@ -40,6 +42,10 @@ jobs:
           fi
 
           cp AndroidManifest.xml app/src/main/AndroidManifest.xml
+
+          cp data_extraction_rules.xml app/src/main/res/xml/data_extraction_rules.xml
+          cp network_security_config.xml app/src/main/res/xml/network_security_config.xml
+          cp styles.xml app/src/main/res/values/styles.xml
 
           cat > settings.gradle <<'EOF'
           pluginManagement {
