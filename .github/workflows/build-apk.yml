@@ -1,4 +1,4 @@
-name: Build To Bus MVP
+name: Build To Bus APK
 
 on:
   workflow_dispatch:
@@ -20,268 +20,24 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Criar estrutura Android
-        run: |
-          mkdir -p app/src/main/java/com/tobus/app
-          mkdir -p app/src/main/assets
-
-          echo "Copiando arquivos do To Bus..."
-
-          cp index.html app/src/main/assets/index.html
-
-          if [ -f styles.css ]; then
-            cp styles.css app/src/main/assets/styles.css
-          fi
-
-          if [ -f app.js ]; then
-            cp app.js app/src/main/assets/app.js
-          fi
-
-          if [ -f config.js ]; then
-            cp config.js app/src/main/assets/config.js
-          fi
-
-          if [ -f logo.png ]; then
-            cp logo.png app/src/main/assets/logo.png
-          fi
-
-          echo "Arquivos copiados:"
-          ls -la app/src/main/assets
-
-          cat > settings.gradle <<'EOF'
-          pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
-          }
-
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-
-          rootProject.name = "ToBus"
-          include(":app")
-          EOF
-
-          cat > build.gradle <<'EOF'
-          plugins {
-              id 'com.android.application' version '8.7.3' apply false
-          }
-          EOF
-
-          cat > app/build.gradle <<'EOF'
-          plugins {
-              id 'com.android.application'
-          }
-
-          android {
-              namespace 'com.tobus.app'
-              compileSdk 35
-
-              defaultConfig {
-                  applicationId "com.tobus.app"
-
-                  minSdk 24
-                  targetSdk 35
-
-                  versionCode 5
-                  versionName "1.4-mvp"
-              }
-          }
-          EOF
-
-          cat > app/src/main/AndroidManifest.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-              <uses-permission
-                  android:name="android.permission.INTERNET" />
-
-              <application
-                  android:label="To Bus"
-                  android:theme="@android:style/Theme.Material.Light.NoActionBar"
-                  android:usesCleartextTraffic="true">
-
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true">
-
-                      <intent-filter>
-
-                          <action
-                              android:name="android.intent.action.MAIN" />
-
-                          <category
-                              android:name="android.intent.category.LAUNCHER" />
-
-                      </intent-filter>
-
-                  </activity>
-
-              </application>
-
-          </manifest>
-          EOF
-
-          cat > app/src/main/java/com/tobus/app/MainActivity.java <<'EOF'
-          package com.tobus.app;
-
-          import android.annotation.SuppressLint;
-          import android.app.Activity;
-          import android.graphics.Color;
-          import android.os.Bundle;
-
-          import android.webkit.ConsoleMessage;
-          import android.webkit.WebChromeClient;
-          import android.webkit.WebResourceError;
-          import android.webkit.WebResourceRequest;
-          import android.webkit.WebSettings;
-          import android.webkit.WebView;
-          import android.webkit.WebViewClient;
-
-          import android.widget.Toast;
-
-          public class MainActivity extends Activity {
-
-              private WebView webView;
-
-              @SuppressLint("SetJavaScriptEnabled")
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-
-                  super.onCreate(savedInstanceState);
-
-                  webView = new WebView(this);
-
-                  webView.setBackgroundColor(
-                      Color.rgb(10, 10, 12)
-                  );
-
-                  setContentView(webView);
-
-                  WebSettings settings =
-                      webView.getSettings();
-
-                  settings.setJavaScriptEnabled(true);
-
-                  settings.setDomStorageEnabled(true);
-
-                  settings.setDatabaseEnabled(true);
-
-                  settings.setAllowFileAccess(true);
-
-                  settings.setAllowContentAccess(true);
-
-                  settings.setLoadsImagesAutomatically(true);
-
-                  settings.setMediaPlaybackRequiresUserGesture(false);
-
-                  settings.setBuiltInZoomControls(false);
-
-                  settings.setDisplayZoomControls(false);
-
-                  webView.setWebViewClient(
-                      new WebViewClient() {
-
-                          @Override
-                          public void onReceivedError(
-                              WebView view,
-                              WebResourceRequest request,
-                              WebResourceError error
-                          ) {
-
-                              super.onReceivedError(
-                                  view,
-                                  request,
-                                  error
-                              );
-                          }
-                      }
-                  );
-
-                  webView.setWebChromeClient(
-                      new WebChromeClient() {
-
-                          @Override
-                          public boolean onConsoleMessage(
-                              ConsoleMessage consoleMessage
-                          ) {
-
-                              return super.onConsoleMessage(
-                                  consoleMessage
-                              );
-                          }
-                      }
-                  );
-
-                  try {
-
-                      webView.loadUrl(
-                          "file:///android_asset/index.html"
-                      );
-
-                  } catch (Exception e) {
-
-                      Toast.makeText(
-                          this,
-                          "Erro ao iniciar To Bus: "
-                              + e.getMessage(),
-                          Toast.LENGTH_LONG
-                      ).show();
-                  }
-              }
-
-              @Override
-              public void onBackPressed() {
-
-                  if (
-                      webView != null &&
-                      webView.canGoBack()
-                  ) {
-
-                      webView.goBack();
-
-                  } else {
-
-                      super.onBackPressed();
-                  }
-              }
-
-              @Override
-              protected void onDestroy() {
-
-                  if (webView != null) {
-
-                      webView.loadUrl("about:blank");
-
-                      webView.stopLoading();
-
-                      webView.clearHistory();
-
-                      webView.removeAllViews();
-
-                      webView.destroy();
-
-                      webView = null;
-                  }
-
-                  super.onDestroy();
-              }
-          }
-          EOF
-
       - name: Configurar Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+
+      - name: Preparar arquivos do aplicativo
+        run: |
+          mkdir -p app/src/main/assets
+          cp index.html app/src/main/assets/index.html
+          cp styles.css app/src/main/assets/styles.css
+          cp app.js app/src/main/assets/app.js
+          cp config.js app/src/main/assets/config.js
+          cp logo.png app/src/main/assets/logo.png
+
+      - name: Verificar arquivos do aplicativo
+        run: |
+          echo "Arquivos que serão incluídos no APK:"
+          ls -la app/src/main/assets
 
       - name: Gerar APK
         run: gradle :app:assembleDebug --stacktrace
@@ -289,6 +45,5 @@ jobs:
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: ToBus-MVP-v1.4
-          path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+          name: ToBus-Demo-APK
+          path: app/build/outputs/apk/debug/*.apk
