@@ -26,27 +26,32 @@ jobs:
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/values
-          mkdir -p app/src/main/res/mipmap-hdpi
           mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/mipmap-hdpi
           mkdir -p app/src/main/res/mipmap-xhdpi
           mkdir -p app/src/main/res/mipmap-xxhdpi
           mkdir -p app/src/main/res/mipmap-xxxhdpi
 
+          # Arquivos do aplicativo
           cp index.html app/src/main/assets/
           cp styles.css app/src/main/assets/
           cp app.js app/src/main/assets/
           cp config.js app/src/main/assets/
 
+          # Logo, caso exista
           if [ -f logo.png ]; then
             cp logo.png app/src/main/assets/
           fi
 
+          # AndroidManifest
           cp AndroidManifest.xml app/src/main/AndroidManifest.xml
 
+          # Recursos XML
           cp data_extraction_rules.xml app/src/main/res/xml/data_extraction_rules.xml
           cp network_security_config.xml app/src/main/res/xml/network_security_config.xml
           cp styles.xml app/src/main/res/values/styles.xml
 
+          # Configuração principal do Gradle
           cat > settings.gradle <<'EOF'
           pluginManagement {
               repositories {
@@ -68,12 +73,14 @@ jobs:
           include(":app")
           EOF
 
+          # Build Gradle raiz
           cat > build.gradle <<'EOF'
           plugins {
               id 'com.android.application' version '8.7.3' apply false
           }
           EOF
 
+          # Build Gradle do aplicativo
           cat > app/build.gradle <<'EOF'
           plugins {
               id 'com.android.application'
@@ -90,6 +97,10 @@ jobs:
                   versionCode 1
                   versionName "1.0"
               }
+          }
+
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.7.1'
           }
           EOF
 
