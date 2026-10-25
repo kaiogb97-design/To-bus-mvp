@@ -1,4 +1,4 @@
-name: Verificar Gradle To Bus
+name: Build APK To Bus
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  verificar:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,21 +25,43 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Mostrar estrutura do projeto
+      - name: Preparar arquivos do To Bus
         run: |
-          echo "=== ARQUIVOS DA RAIZ ==="
-          ls -la
-          echo ""
-          echo "=== SETTINGS.GRADLE ==="
-          cat settings.gradle || true
-          echo ""
-          echo "=== BUILD.GRADLE ==="
-          cat build.gradle || true
+          mkdir -p app/src/main/assets/css
+          mkdir -p app/src/main/assets/js
 
-      - name: Descobrir projetos Gradle
-        run: |
-          gradle projects
+          # Copia o CSS
+          if [ -d "css" ]; then
+            cp -r css/. app/src/main/assets/css/
+          fi
 
-      - name: Descobrir tarefas Gradle
+          # Copia os JavaScripts
+          if [ -d "js" ]; then
+            cp -r js/. app/src/main/assets/js/
+          fi
+
+          # Copia a configuração
+          if [ -f "config.js" ]; then
+            cp config.js app/src/main/assets/config.js
+          fi
+
+          # Copia a logo, se existir
+          if [ -f "logo.png" ]; then
+            cp logo.png app/src/main/assets/logo.png
+          fi
+
+          echo "=== ARQUIVOS QUE ENTRARÃO NO APK ==="
+          find app/src/main/assets -type f | sort
+
+      - name: Gerar APK
+        run: gradle :app:assembleDebug --stacktrace
+
+      - name: Mostrar APK gerado
         run: |
-          gradle tasks --all
+          find app/build/outputs/apk -type f -name "*.apk" -print
+
+      - name: Disponibilizar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: To-Bus-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
