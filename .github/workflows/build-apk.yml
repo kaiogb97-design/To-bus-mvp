@@ -1,4 +1,4 @@
-name: Teste To Bus Android
+name: To Bus WebView Test
 
 on:
   workflow_dispatch:
@@ -20,10 +20,15 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Criar aplicativo Android de teste
+      - name: Criar aplicativo To Bus
         run: |
           mkdir -p app/src/main/java/com/tobus/app
+          mkdir -p app/src/main/assets
 
+          # Copiar somente o HTML nesta etapa
+          cp index.html app/src/main/assets/index.html
+
+          # SETTINGS.GRADLE
           cat > settings.gradle <<'EOF'
           pluginManagement {
               repositories {
@@ -45,12 +50,14 @@ jobs:
           include(":app")
           EOF
 
+          # BUILD.GRADLE
           cat > build.gradle <<'EOF'
           plugins {
               id 'com.android.application' version '8.7.3' apply false
           }
           EOF
 
+          # APP/BUILD.GRADLE
           cat > app/build.gradle <<'EOF'
           plugins {
               id 'com.android.application'
@@ -64,20 +71,24 @@ jobs:
                   applicationId "com.tobus.app"
                   minSdk 24
                   targetSdk 35
-                  versionCode 3
-                  versionName "1.2-test"
+                  versionCode 4
+                  versionName "1.3-webview-test"
               }
           }
           EOF
 
+          # ANDROID MANIFEST
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
 
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+              <uses-permission android:name="android.permission.INTERNET" />
+
               <application
-                  android:label="To Bus Teste"
-                  android:theme="@android:style/Theme.Material.Light.NoActionBar">
+                  android:label="To Bus"
+                  android:theme="@android:style/Theme.Material.Light.NoActionBar"
+                  android:usesCleartextTraffic="true">
 
                   <activity
                       android:name=".MainActivity"
@@ -95,51 +106,67 @@ jobs:
           </manifest>
           EOF
 
+          # MAIN ACTIVITY
           cat > app/src/main/java/com/tobus/app/MainActivity.java <<'EOF'
           package com.tobus.app;
 
+          import android.annotation.SuppressLint;
           import android.app.Activity;
           import android.os.Bundle;
-          import android.graphics.Color;
-          import android.view.Gravity;
-          import android.widget.LinearLayout;
-          import android.widget.TextView;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
 
           public class MainActivity extends Activity {
 
+              private WebView webView;
+
+              @SuppressLint("SetJavaScriptEnabled")
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
 
-                  LinearLayout layout = new LinearLayout(this);
+                  webView = new WebView(this);
 
-                  layout.setOrientation(LinearLayout.VERTICAL);
-                  layout.setGravity(Gravity.CENTER);
-                  layout.setPadding(40, 40, 40, 40);
-                  layout.setBackgroundColor(Color.rgb(10, 10, 12));
+                  setContentView(webView);
 
-                  TextView titulo = new TextView(this);
+                  WebSettings settings = webView.getSettings();
 
-                  titulo.setText("To Bus");
-                  titulo.setTextSize(34);
-                  titulo.setTextColor(Color.WHITE);
-                  titulo.setGravity(Gravity.CENTER);
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setAllowFileAccess(true);
+                  settings.setAllowContentAccess(true);
 
-                  TextView status = new TextView(this);
+                  webView.setWebViewClient(new WebViewClient());
+                  webView.setWebChromeClient(new WebChromeClient());
 
-                  status.setText(
-                      "\nAplicativo iniciado com sucesso!\n\n" +
-                      "O sistema Android do To Bus está funcionando."
+                  webView.loadUrl(
+                      "file:///android_asset/index.html"
                   );
+              }
 
-                  status.setTextSize(18);
-                  status.setTextColor(Color.LTGRAY);
-                  status.setGravity(Gravity.CENTER);
+              @Override
+              public void onBackPressed() {
 
-                  layout.addView(titulo);
-                  layout.addView(status);
+                  if (webView != null && webView.canGoBack()) {
+                      webView.goBack();
+                  } else {
+                      super.onBackPressed();
+                  }
+              }
 
-                  setContentView(layout);
+              @Override
+              protected void onDestroy() {
+
+                  if (webView != null) {
+                      webView.loadUrl("about:blank");
+                      webView.stopLoading();
+                      webView.destroy();
+                      webView = null;
+                  }
+
+                  super.onDestroy();
               }
           }
           EOF
@@ -149,12 +176,12 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Gerar APK de teste
+      - name: Gerar APK
         run: gradle :app:assembleDebug --stacktrace
 
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: ToBus-Teste-Android
+          name: ToBus-WebView-Test
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
