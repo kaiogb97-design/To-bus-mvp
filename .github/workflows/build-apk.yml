@@ -20,16 +20,83 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Montar estrutura Android
+        run: |
+          mkdir -p app/src/main/assets
+          mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
+
+          cp index.html app/src/main/assets/
+          cp styles.css app/src/main/assets/
+          cp app.js app/src/main/assets/
+          cp config.js app/src/main/assets/
+
+          if [ -f logo.png ]; then
+            cp logo.png app/src/main/assets/
+          fi
+
+          cp AndroidManifest.xml app/src/main/AndroidManifest.xml
+
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          rootProject.name = "ToBus"
+          include(":app")
+          EOF
+
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
+          }
+          EOF
+
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+
+          android {
+              namespace 'com.tobus.app'
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId "com.tobus.app"
+                  minSdk 24
+                  targetSdk 35
+                  versionCode 1
+                  versionName "1.0"
+              }
+          }
+          EOF
+
       - name: Configurar Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
       - name: Gerar APK
-        run: gradle assembleDebug --stacktrace
+        run: gradle :app:assembleDebug --stacktrace
 
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: ToBus-Demo-APK
-          path: app/build/outputs/apk/debug/*.apk
+          name: ToBus-MVP-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
